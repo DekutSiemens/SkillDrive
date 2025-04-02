@@ -1,5 +1,6 @@
 {
   "dependencies": {
+    "com.unity.ai.navigation": "2.0.6",
     "com.unity.burst": "1.8.19",
     "com.unity.collab-proxy": "2.7.1",
     "com.unity.feature.development": "1.0.2",
@@ -11,11 +12,13 @@
     "com.unity.services.authentication": "3.4.0",
     "com.unity.services.multiplayer": "1.1.0",
     "com.unity.services.vivox": "16.5.4",
+    "com.unity.splines": "2.7.2",
+    "com.unity.timeline": "1.8.8",
     "com.unity.transport": "2.4.0",
     "com.unity.xr.hands": "1.5.0",
-    "com.unity.xr.interaction.toolkit": "3.0.7",
-    "com.unity.xr.management": "4.5.0",
-    "com.unity.xr.openxr": "1.14.0",
+    "com.unity.xr.interaction.toolkit": "3.0.8",
+    "com.unity.xr.management": "4.5.1",
+    "com.unity.xr.openxr": "1.14.2",
     "com.unity.modules.accessibility": "1.0.0",
     "com.unity.modules.ai": "1.0.0",
     "com.unity.modules.androidjni": "1.0.0",
