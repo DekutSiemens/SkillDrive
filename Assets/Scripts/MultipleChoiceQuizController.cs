@@ -1,181 +1,290 @@
 ﻿using System.Collections.Generic;
-using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
+using TMPro;
 
 public class MultipleChoiceQuizController : MonoBehaviour
 {
     [System.Serializable]
-    public class QuestionData
+    public class QuizQuestion
     {
-        public GameObject questionObject;        // The image GameObject for the question
-        public int numberOfOptions = 4;          // Number of answer choices (e.g., 4 = A-D)
-        public List<bool> correctAnswers;        // Boolean list to define correct options (A = 0, B = 1, etc.)
+        public string questionName;
+        public GameObject questionObject;
+        public int optionCount;
+        public List<bool> correctAnswers = new List<bool>();
     }
 
     [Header("Question Setup")]
-    public List<QuestionData> questions = new List<QuestionData>(); // All question data
-    public Transform answerPanel;               // Vertical layout group for answer buttons
-    public Button answerButtonPrefab;           // Prefab with TMP or Text for label
+    public List<QuizQuestion> questions = new List<QuizQuestion>();
 
-    [Header("Instruction and Outro UI")]
-    public TextMeshProUGUI instructionText;     // Instructions ("Select X options")
-    public TextMeshProUGUI outroTextPanel;      // Final result text ("Your Score: X")
+    [Header("UI Elements")]
+    public GameObject buttonPrefab;
+    public Transform buttonContainer;
+    public Button submitButton;
+    public TextMeshProUGUI feedbackText;
+    public TextMeshProUGUI questionNumberText;
+    public TextMeshProUGUI finalScoreText;
 
-    private int currentQuestionIndex = 0;
-    private List<ToggleButton> activeButtons = new List<ToggleButton>();
-    private List<int> selectedIndices = new List<int>();
-    private int maxSelectionsAllowed = 1;
+    [Header("Panels")]
+    public GameObject introPanel;
+    public GameObject outroPanel;
 
-    private int score = 0;
-    private List<bool> resultsPerQuestion = new List<bool>(); // true = correct, false = incorrect
+    private int currentQuestionIndex = -1;
+    private List<Button> optionButtons = new List<Button>();
+    private List<bool> selectedOptions = new List<bool>();
+    private Queue<int> selectionQueue = new Queue<int>();
+    private int correctAnswersRequired = 0;
+    private List<bool> answerResults = new List<bool>();
 
-    private readonly string[] optionLabels = { "A", "B", "C", "D", "E", "F", "G" };
-
-    void Start()
+    private void Start()
     {
-        ResetQuiz(); // Automatically starts quiz on play
-    }
-
-    public void LoadQuestion(int index)
-    {
-        if (index < 0 || index >= questions.Count) return;
-
-        // Deactivate all questions
-        foreach (var q in questions)
-            q.questionObject.SetActive(false);
-
-        // Set question index and activate current
-        currentQuestionIndex = index;
-        var question = questions[currentQuestionIndex];
-        question.questionObject.SetActive(true);
-
-        // Clear previous buttons
-        ClearAnswerPanel();
-
-        // Count number of correct answers
-        maxSelectionsAllowed = 0;
-        foreach (bool isCorrect in question.correctAnswers)
-            if (isCorrect) maxSelectionsAllowed++;
-
-        maxSelectionsAllowed = Mathf.Max(1, maxSelectionsAllowed);
-        instructionText.text = $"Select {maxSelectionsAllowed} option{(maxSelectionsAllowed > 1 ? "s" : "")}";
-
-        // Generate new buttons
-        for (int i = 0; i < question.numberOfOptions; i++)
+        if (submitButton != null)
         {
-            Button newBtn = Instantiate(answerButtonPrefab, answerPanel);
-            string label = (i < optionLabels.Length) ? optionLabels[i] : $"Option {i + 1}";
-
-            var text = newBtn.GetComponentInChildren<TextMeshProUGUI>();
-            if (text != null) text.text = label;
-
-            var toggle = newBtn.gameObject.AddComponent<ToggleButton>();
-            toggle.Init(i, OnOptionSelected);
-            activeButtons.Add(toggle);
+            submitButton.onClick.AddListener(CheckAnswer);
         }
-    }
 
-    private void ClearAnswerPanel()
-    {
-        foreach (Transform child in answerPanel)
-            Destroy(child.gameObject);
-
-        activeButtons.Clear();
-        selectedIndices.Clear();
-    }
-
-    private void OnOptionSelected(int index, bool isSelected)
-    {
-        if (isSelected)
+        foreach (var q in questions)
         {
-            if (selectedIndices.Contains(index)) return;
+            if (q.questionObject != null)
+                q.questionObject.SetActive(false);
+        }
 
-            if (selectedIndices.Count < maxSelectionsAllowed)
-            {
-                selectedIndices.Add(index);
-            }
-            else
-            {
-                int oldest = selectedIndices[0];
-                selectedIndices.RemoveAt(0);
-                activeButtons[oldest].SetSelected(false);
-                selectedIndices.Add(index);
-            }
+        if (introPanel != null)
+            introPanel.SetActive(true);
+
+        if (outroPanel != null)
+            outroPanel.SetActive(false);
+    }
+
+    public void StartQuiz()
+    {
+        if (introPanel != null)
+            introPanel.SetActive(false);
+
+        if (questions.Count > 0)
+            ShowQuestion(0);
+    }
+
+    public void ShowQuestion(int index)
+    {
+        if (index < 0 || index >= questions.Count)
+        {
+            Debug.LogError("Question index out of range!");
+            return;
+        }
+
+        if (currentQuestionIndex >= 0 && currentQuestionIndex < questions.Count)
+        {
+            questions[currentQuestionIndex].questionObject?.SetActive(false);
+        }
+
+        currentQuestionIndex = index;
+        QuizQuestion currentQ = questions[currentQuestionIndex];
+        currentQ.questionObject?.SetActive(true);
+
+        if (questionNumberText != null)
+        {
+            questionNumberText.text = $"Question {currentQuestionIndex + 1} of {questions.Count}";
+        }
+
+        correctAnswersRequired = 0;
+        foreach (bool b in currentQ.correctAnswers)
+            if (b) correctAnswersRequired++;
+
+        ClearOptionButtons();
+        selectedOptions.Clear();
+
+        for (int i = 0; i < currentQ.optionCount; i++)
+        {
+            if (i >= currentQ.correctAnswers.Count)
+                currentQ.correctAnswers.Add(false);
+
+            GameObject buttonObj = Instantiate(buttonPrefab, buttonContainer);
+            Button button = buttonObj.GetComponent<Button>();
+            TextMeshProUGUI text = buttonObj.GetComponentInChildren<TextMeshProUGUI>();
+            char optionLetter = (char)('A' + i);
+            text.text = optionLetter.ToString();
+
+            int optionIndex = i;
+            button.onClick.AddListener(() => ToggleOption(optionIndex));
+
+            optionButtons.Add(button);
+            selectedOptions.Add(false);
+        }
+
+        selectionQueue.Clear();
+        if (feedbackText != null)
+            feedbackText.text = $"Select {correctAnswersRequired} option{(correctAnswersRequired > 1 ? "s" : "")}";
+    }
+
+    private void ToggleOption(int index)
+    {
+        if (selectedOptions[index])
+        {
+            selectedOptions[index] = false;
+            Queue<int> newQueue = new Queue<int>();
+            foreach (int i in selectionQueue)
+                if (i != index)
+                    newQueue.Enqueue(i);
+            selectionQueue = newQueue;
+            UpdateButtonVisual(optionButtons[index], false);
+            return;
+        }
+
+        if (selectionQueue.Count >= correctAnswersRequired)
+        {
+            int oldest = selectionQueue.Dequeue();
+            selectedOptions[oldest] = false;
+            UpdateButtonVisual(optionButtons[oldest], false);
+        }
+
+        selectedOptions[index] = true;
+        selectionQueue.Enqueue(index);
+        UpdateButtonVisual(optionButtons[index], true);
+    }
+
+    private void UpdateButtonVisual(Button button, bool selected)
+    {
+        ColorBlock cb = button.colors;
+
+        if (selected)
+        {
+            Color32 selectedColor = new Color32(0x00, 0x36, 0x6D, 255);
+            cb.normalColor = selectedColor;
+            cb.highlightedColor = selectedColor;
+            cb.pressedColor = selectedColor;
+            cb.selectedColor = selectedColor;
         }
         else
         {
-            selectedIndices.Remove(index);
+            Color32 defaultColor = new Color32(255, 255, 255, 255);
+            cb.normalColor = defaultColor;
+            cb.highlightedColor = defaultColor;
+            cb.pressedColor = defaultColor;
+            cb.selectedColor = defaultColor;
         }
+
+        button.colors = cb;
+        button.transition = Selectable.Transition.ColorTint;
     }
 
-    public void SubmitAnswer()
+    private void ClearOptionButtons()
     {
-        var question = questions[currentQuestionIndex];
-
-        // Check if user selected exactly the correct answers
-        bool isCorrect = true;
-        for (int i = 0; i < question.correctAnswers.Count; i++)
+        foreach (Transform child in buttonContainer)
         {
-            bool shouldBeSelected = question.correctAnswers[i];
-            bool actuallySelected = selectedIndices.Contains(i);
+            Destroy(child.gameObject);
+        }
 
-            if (shouldBeSelected != actuallySelected)
+        optionButtons.Clear();
+        selectedOptions.Clear();
+        selectionQueue.Clear();
+    }
+
+    public void CheckAnswer()
+    {
+        if (currentQuestionIndex < 0 || currentQuestionIndex >= questions.Count)
+            return;
+
+        QuizQuestion currentQ = questions[currentQuestionIndex];
+
+        bool isCorrect = true;
+        for (int i = 0; i < currentQ.correctAnswers.Count && i < selectedOptions.Count; i++)
+        {
+            if (currentQ.correctAnswers[i] != selectedOptions[i])
             {
                 isCorrect = false;
                 break;
             }
         }
 
-        resultsPerQuestion.Add(isCorrect);
-        if (isCorrect) score++;
+        answerResults.Add(isCorrect);
 
-        // Load next question or show result
-        if (currentQuestionIndex + 1 < questions.Count)
+        if (feedbackText != null)
         {
-            LoadNextQuestion();
+            feedbackText.text = isCorrect ? "Correct" : "Incorrect";
         }
-        else
-        {
-            ShowFinalResults();
-        }
+
+        StartCoroutine(NextQuestionAfterDelay(1.5f));
     }
 
-    public void LoadNextQuestion()
+    private System.Collections.IEnumerator NextQuestionAfterDelay(float delay)
     {
+        yield return new WaitForSeconds(delay);
+
         int nextIndex = currentQuestionIndex + 1;
 
         if (nextIndex < questions.Count)
         {
-            LoadQuestion(nextIndex);
+            ShowQuestion(nextIndex);
         }
         else
         {
-            ShowFinalResults();
-        }
-    }
+            submitButton.interactable = false;
 
-    private void ShowFinalResults()
-    {
-        ClearAnswerPanel();
-        instructionText.text = "All questions completed!";
-
-        if (outroTextPanel != null)
-        {
-            string summary = $"Your Score: {score}/{questions.Count}\n\n";
-            for (int i = 0; i < resultsPerQuestion.Count; i++)
+            if (questions[currentQuestionIndex].questionObject != null)
             {
-                summary += $"Question {i + 1}: {(resultsPerQuestion[i] ? "<color=green>Correct</color>" : "<color=red>Wrong</color>")}\n";
+                questions[currentQuestionIndex].questionObject.SetActive(false);
             }
-            outroTextPanel.text = summary;
+
+            int correctCount = 0;
+            for (int i = 0; i < answerResults.Count; i++)
+            {
+                if (answerResults[i]) correctCount++;
+            }
+
+            if (finalScoreText != null)
+            {
+                string summary = $"Final Score: {correctCount} / {questions.Count}\n\n";
+                for (int i = 0; i < answerResults.Count; i++)
+                {
+                    string resultText = answerResults[i] ? "Correct" : "Incorrect";
+                    summary += $"Question {i + 1}: {resultText}\n";
+                }
+
+                finalScoreText.text = summary;
+            }
+
+            if (feedbackText != null)
+            {
+                feedbackText.text = "";
+            }
+
+            if (outroPanel != null)
+            {
+                outroPanel.SetActive(true);
+            }
         }
     }
 
     public void ResetQuiz()
     {
-        score = 0;
-        resultsPerQuestion.Clear();
-        outroTextPanel.text = "";
-        LoadQuestion(0);
+        if (currentQuestionIndex >= 0 && currentQuestionIndex < questions.Count)
+        {
+            questions[currentQuestionIndex].questionObject?.SetActive(false);
+        }
+
+        ClearOptionButtons();
+        currentQuestionIndex = -1;
+        correctAnswersRequired = 0;
+        selectionQueue.Clear();
+        answerResults.Clear();
+
+        if (feedbackText != null)
+        {
+            feedbackText.text = "";
+        }
+
+        if (finalScoreText != null)
+        {
+            finalScoreText.text = "";
+        }
+
+        submitButton.interactable = true;
+
+        if (introPanel != null)
+            introPanel.SetActive(true);
+
+        if (outroPanel != null)
+            outroPanel.SetActive(false);
     }
 }
