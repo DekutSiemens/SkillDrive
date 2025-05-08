@@ -6,14 +6,17 @@ EditorBuildSettings:
   serializedVersion: 2
   m_Scenes:
   - enabled: 1
+    path: Assets/Scenes/StartingScene.unity
+    guid: ce48323797cde8c43a5b54fcbc988a90
+  - enabled: 1
+    path: Assets/Scenes/Gears.unity
+    guid: fcc8e2162c58c8147aad5c29f805ae54
+  - enabled: 0
     path: Assets/Scenes/SampleScene.unity
     guid: 13f6f87036926f94ab0417ca1b31725c
   - enabled: 0
     path: Assets/Scenes/BasicScene.unity
     guid: bc761d9a86b33554f85fd11bb1f87ba3
-  - enabled: 1
-    path: Assets/Scenes/L1_SMSCP.unity
-    guid: ce48323797cde8c43a5b54fcbc988a90
   m_configObjects:
     com.unity.xr.management.loader_settings: {fileID: 11400000, guid: e3aee76b9372917449aef639e2f74814,
       type: 2}
