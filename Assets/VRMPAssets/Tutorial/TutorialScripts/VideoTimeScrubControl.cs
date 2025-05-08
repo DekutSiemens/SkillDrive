@@ -5,7 +5,7 @@ using UnityEngine;
 using UnityEngine.UI;
 using UnityEngine.Video;
 
-namespace XRMultiplayer
+namespace Unity.VRTemplate
 {
     /// <summary>
     /// Connects a UI slider control to a video player, allowing users to scrub to a particular time in th video.
@@ -13,12 +13,9 @@ namespace XRMultiplayer
     [RequireComponent(typeof(VideoPlayer))]
     public class VideoTimeScrubControl : MonoBehaviour
     {
-        private const string TIME_FORMAT = "m':'ss";
         [SerializeField]
         [Tooltip("Video play/pause button GameObject")]
         GameObject m_ButtonPlayOrPause;
-        [SerializeField, Tooltip("Use Play/Pause Butotn")]
-        bool m_UsePlayPauseButton = true;
 
         [SerializeField]
         [Tooltip("Slider that controls the video")]
@@ -37,11 +34,12 @@ namespace XRMultiplayer
         Image m_ButtonPlayOrPauseIcon;
 
         [SerializeField]
+        [Tooltip("Text that displays the current time of the video.")]
+        TextMeshProUGUI m_VideoTimeText;
+
+        [SerializeField]
         [Tooltip("If checked, the slider will fade off after a few seconds. If unchecked, the slider will remain on.")]
         bool m_HideSliderAfterFewSeconds;
-
-        [SerializeField, Tooltip("The Video Player Time Text")]
-        TMP_Text m_VideoTimeText;
 
         bool m_IsDragging;
         bool m_VideoIsPlaying;
@@ -51,14 +49,10 @@ namespace XRMultiplayer
 
         void Start()
         {
-            if (!TryGetComponent(out m_VideoPlayer))
-            {
-                Utils.Log("VideoTimeScrubControl: No VideoPlayer component found on this GameObject.", 2);
-                return;
-            }
+            m_VideoPlayer = GetComponent<VideoPlayer>();
             if (!m_VideoPlayer.playOnAwake)
             {
-                m_VideoPlayer.playOnAwake = true; // Set play on awake for next enable.
+                m_VideoPlayer.playOnAwake = false; // Set play on awake for next enable.
                 m_VideoPlayer.Play(); // Play video to load first frame.
                 VideoStop(); // Stop the video to set correct state and pause frame.
             }
@@ -67,8 +61,7 @@ namespace XRMultiplayer
                 VideoPlay(); // Play to ensure correct state.
             }
 
-
-            if (!m_UsePlayPauseButton && m_ButtonPlayOrPause != null)
+            if (m_ButtonPlayOrPause != null)
                 m_ButtonPlayOrPause.SetActive(false);
         }
 
@@ -81,6 +74,7 @@ namespace XRMultiplayer
             }
 
             m_Slider.value = 0.0f;
+            m_Slider.onValueChanged.AddListener(OnSliderValueChange);
             m_Slider.gameObject.SetActive(true);
             if (m_HideSliderAfterFewSeconds)
                 StartCoroutine(HideSliderAfterSeconds());
@@ -107,10 +101,6 @@ namespace XRMultiplayer
                     m_Slider.value = progress;
                 }
             }
-
-            TimeSpan elapsedTime = TimeSpan.FromSeconds(m_VideoPlayer.time);
-            TimeSpan totalTime = TimeSpan.FromSeconds(m_VideoPlayer.length);
-            m_VideoTimeText.text = $"{elapsedTime.ToString(TIME_FORMAT)} / {totalTime.ToString(TIME_FORMAT)}";
         }
 
         public void OnPointerDown()
@@ -125,6 +115,11 @@ namespace XRMultiplayer
             m_IsDragging = false;
             VideoPlay();
             VideoJump();
+        }
+
+        void OnSliderValueChange(float sliderValue)
+        {
+            UpdateVideoTimeText();
         }
 
         IEnumerator HideSliderAfterSeconds(float duration = 1f)
@@ -159,13 +154,31 @@ namespace XRMultiplayer
             }
         }
 
+        void UpdateVideoTimeText()
+        {
+            if (m_VideoPlayer != null && m_VideoTimeText != null)
+            {
+                var currentTimeTimeSpan = TimeSpan.FromSeconds(m_VideoPlayer.time);
+                var totalTimeTimeSpan = TimeSpan.FromSeconds(m_VideoPlayer.length);
+                var currentTimeString = string.Format("{0:D2}:{1:D2}",
+                    currentTimeTimeSpan.Minutes,
+                    currentTimeTimeSpan.Seconds
+                );
+
+                var totalTimeString = string.Format("{0:D2}:{1:D2}",
+                    totalTimeTimeSpan.Minutes,
+                    totalTimeTimeSpan.Seconds
+                );
+                m_VideoTimeText.SetText(currentTimeString + " / " + totalTimeString);
+            }
+        }
+
         void VideoStop()
         {
             m_VideoIsPlaying = false;
             m_VideoPlayer.Pause();
             m_ButtonPlayOrPauseIcon.sprite = m_IconPlay;
-            if (!m_UsePlayPauseButton && m_ButtonPlayOrPause != null)
-                m_ButtonPlayOrPause.SetActive(true);
+            m_ButtonPlayOrPause.SetActive(true);
         }
 
         void VideoPlay()
@@ -173,8 +186,7 @@ namespace XRMultiplayer
             m_VideoIsPlaying = true;
             m_VideoPlayer.Play();
             m_ButtonPlayOrPauseIcon.sprite = m_IconPause;
-            if (!m_UsePlayPauseButton && m_ButtonPlayOrPause != null)
-                m_ButtonPlayOrPause.SetActive(false);
+            m_ButtonPlayOrPause.SetActive(false);
         }
     }
 }

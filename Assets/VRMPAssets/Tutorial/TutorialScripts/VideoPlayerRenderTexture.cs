@@ -1,8 +1,7 @@
 using UnityEngine;
-using UnityEngine.UI;
 using UnityEngine.Video;
 
-namespace XRMultiplayer
+namespace Unity.VRTemplate
 {
     /// <summary>
     /// Create a RenderTexture for rendering video to a target renderer.
@@ -13,12 +12,8 @@ namespace XRMultiplayer
         const string k_ShaderName = "Unlit/Texture";
 
         [SerializeField]
-        [Tooltip("The target Image which will display the video.")]
-        RawImage m_Image;
-
-        [SerializeField] Vector2 m_ImageSize = new Vector2(1920, 1080);
-        [SerializeField] float m_Scale = 1.0f;
-        [SerializeField] float m_ZOffset = -1;
+        [Tooltip("The target Renderer which will display the video.")]
+        Renderer m_Renderer;
 
         [SerializeField]
         [Tooltip("The width of the RenderTexture which will be created.")]
@@ -32,27 +27,14 @@ namespace XRMultiplayer
         [Tooltip("The bit depth of the depth channel for the RenderTexture which will be created.")]
         int m_RenderTextureDepth;
 
-        VideoPlayer m_VideoPlayer;
-
-
-        void OnValidate()
+        void Start()
         {
-            if (m_Image == null) return;
-            m_Image.rectTransform.sizeDelta = m_ImageSize * m_Scale;
-            m_Image.rectTransform.localPosition = new Vector3(m_Image.rectTransform.localPosition.x, m_Image.rectTransform.localPosition.y, m_ZOffset);
-        }
-
-        void Awake()
-        {
-            if (!TryGetComponent(out m_VideoPlayer))
-            {
-                Utils.Log("VideoPlayerRenderTexture requires a VideoPlayer component.", 2);
-                return;
-            }
             var renderTexture = new RenderTexture(m_RenderTextureWidth, m_RenderTextureHeight, m_RenderTextureDepth);
             renderTexture.Create();
-            m_Image.material.mainTexture = renderTexture;
-            m_VideoPlayer.targetTexture = renderTexture;
+            var material = new Material(Shader.Find(k_ShaderName));
+            material.mainTexture = renderTexture;
+            GetComponent<VideoPlayer>().targetTexture = renderTexture;
+            m_Renderer.material = material;
         }
     }
 }
