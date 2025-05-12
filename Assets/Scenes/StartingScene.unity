@@ -1109,16 +1109,16 @@ MonoBehaviour:
   m_OnClick:
     m_PersistentCalls:
       m_Calls:
-      - m_Target: {fileID: 0}
-        m_TargetAssemblyTypeName: PlayerTransformChange, Assembly-CSharp
-        m_MethodName: MovePlayerTo
-        m_Mode: 3
+      - m_Target: {fileID: 1857826801}
+        m_TargetAssemblyTypeName: SceneTransitionManager, Assembly-CSharp
+        m_MethodName: TransitionToScene
+        m_Mode: 5
         m_Arguments:
           m_ObjectArgument: {fileID: 0}
           m_ObjectArgumentAssemblyTypeName: UnityEngine.Object, UnityEngine
           m_IntArgument: 1
           m_FloatArgument: 0
-          m_StringArgument: 
+          m_StringArgument: Sensors
           m_BoolArgument: 0
         m_CallState: 2
 --- !u!222 &160397519
@@ -3802,33 +3802,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: ba379b52851771f438e4580c5da84a31, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  m_GazeTransform: {fileID: 0}
-  m_FacingThreshold: 0.85
-  m_FacingEntered:
-    m_PersistentCalls:
-      m_Calls: []
-  m_FacingExited:
-    m_PersistentCalls:
-      m_Calls: []
-  m_LargeMovementDistanceThreshold: 0.05
-  m_LargeMovementCoolDownTime: 0.25
-  m_UseDistanceThreshold: 0
-  m_MaxDistanceThreshold: 10
-  m_CanvasGroup: {fileID: 0}
-  m_TooltipUI: {fileID: 0}
-  m_FadeDuration: 0.25
-  m_MinMaxThresholdDistance: {x: 2, y: 5}
-  m_MinMaxFacingThreshold: {x: 0.6, y: 0.95}
-  m_MaxRenderingDistance: 15
-  m_ComponentsToToggle:
-  - {fileID: 1368687367}
-  - {fileID: 622422916}
-  - {fileID: 1443437127}
-  - {fileID: 1511230691}
-  - {fileID: 1018055674}
-  m_ObjectsToToggle: []
-  m_StartHidden: 1
-  m_DisableCanvasGroupObject: 1
 --- !u!114 &598979674
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -4180,33 +4153,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: ba379b52851771f438e4580c5da84a31, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  m_GazeTransform: {fileID: 0}
-  m_FacingThreshold: 0.85
-  m_FacingEntered:
-    m_PersistentCalls:
-      m_Calls: []
-  m_FacingExited:
-    m_PersistentCalls:
-      m_Calls: []
-  m_LargeMovementDistanceThreshold: 0.05
-  m_LargeMovementCoolDownTime: 0.25
-  m_UseDistanceThreshold: 0
-  m_MaxDistanceThreshold: 10
-  m_CanvasGroup: {fileID: 0}
-  m_TooltipUI: {fileID: 0}
-  m_FadeDuration: 0.25
-  m_MinMaxThresholdDistance: {x: 2, y: 5}
-  m_MinMaxFacingThreshold: {x: 0.6, y: 0.95}
-  m_MaxRenderingDistance: 15
-  m_ComponentsToToggle:
-  - {fileID: 231834185}
-  - {fileID: 147652674}
-  - {fileID: 2035808414}
-  - {fileID: 29164110}
-  - {fileID: 436387249}
-  m_ObjectsToToggle: []
-  m_StartHidden: 1
-  m_DisableCanvasGroupObject: 1
 --- !u!114 &768058671
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -4577,33 +4523,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: ba379b52851771f438e4580c5da84a31, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  m_GazeTransform: {fileID: 0}
-  m_FacingThreshold: 0.85
-  m_FacingEntered:
-    m_PersistentCalls:
-      m_Calls: []
-  m_FacingExited:
-    m_PersistentCalls:
-      m_Calls: []
-  m_LargeMovementDistanceThreshold: 0.05
-  m_LargeMovementCoolDownTime: 0.25
-  m_UseDistanceThreshold: 0
-  m_MaxDistanceThreshold: 10
-  m_CanvasGroup: {fileID: 0}
-  m_TooltipUI: {fileID: 0}
-  m_FadeDuration: 0.25
-  m_MinMaxThresholdDistance: {x: 2, y: 5}
-  m_MinMaxFacingThreshold: {x: 0.6, y: 0.95}
-  m_MaxRenderingDistance: 15
-  m_ComponentsToToggle:
-  - {fileID: 1115624736}
-  - {fileID: 1552288037}
-  - {fileID: 352703801}
-  - {fileID: 922973341}
-  - {fileID: 447820905}
-  m_ObjectsToToggle: []
-  m_StartHidden: 1
-  m_DisableCanvasGroupObject: 1
 --- !u!114 &874055929
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -4914,33 +4833,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: ba379b52851771f438e4580c5da84a31, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  m_GazeTransform: {fileID: 0}
-  m_FacingThreshold: 0.85
-  m_FacingEntered:
-    m_PersistentCalls:
-      m_Calls: []
-  m_FacingExited:
-    m_PersistentCalls:
-      m_Calls: []
-  m_LargeMovementDistanceThreshold: 0.05
-  m_LargeMovementCoolDownTime: 0.25
-  m_UseDistanceThreshold: 0
-  m_MaxDistanceThreshold: 10
-  m_CanvasGroup: {fileID: 0}
-  m_TooltipUI: {fileID: 0}
-  m_FadeDuration: 0.25
-  m_MinMaxThresholdDistance: {x: 2, y: 5}
-  m_MinMaxFacingThreshold: {x: 0.6, y: 0.95}
-  m_MaxRenderingDistance: 15
-  m_ComponentsToToggle:
-  - {fileID: 1630988563}
-  - {fileID: 800576999}
-  - {fileID: 31402019}
-  - {fileID: 327248356}
-  - {fileID: 1458652627}
-  m_ObjectsToToggle: []
-  m_StartHidden: 1
-  m_DisableCanvasGroupObject: 1
 --- !u!114 &968222409
 MonoBehaviour:
   m_ObjectHideFlags: 0

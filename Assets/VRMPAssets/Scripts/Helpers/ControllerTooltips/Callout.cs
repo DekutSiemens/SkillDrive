@@ -8,9 +8,6 @@ namespace Unity.VRTemplate
     /// </summary>
     public class Callout : MonoBehaviour
     {
-        [SerializeField, Tooltip("Whether Gaze Callout is used.")]
-        bool m_UseGazeCallout = true;
-
         [SerializeField]
         [Tooltip("The tooltip Transform associated with this Callout.")]
         Transform m_LazyTooltip;
@@ -38,12 +35,6 @@ namespace Unity.VRTemplate
 
         void Start()
         {
-            if (!m_UseGazeCallout)
-            {
-                DisableCallout();
-                return;
-            }
-
             if (m_Unparent)
             {
                 if (m_LazyTooltip != null)
@@ -61,12 +52,6 @@ namespace Unity.VRTemplate
 
         public void GazeHoverStart()
         {
-            if (!m_UseGazeCallout)
-            {
-                DisableCallout();
-                return;
-            }
-
             m_Gazing = true;
             if (m_StartCo != null)
                 StopCoroutine(m_StartCo);
@@ -77,12 +62,6 @@ namespace Unity.VRTemplate
 
         public void GazeHoverEnd()
         {
-            if (!m_UseGazeCallout)
-            {
-                DisableCallout();
-                return;
-            }
-
             m_Gazing = false;
             m_EndCo = StartCoroutine(EndDelay());
         }
@@ -115,15 +94,6 @@ namespace Unity.VRTemplate
                 m_LazyTooltip.gameObject.SetActive(false);
             if (m_Curve != null)
                 m_Curve.SetActive(false);
-        }
-
-        void DisableCallout()
-        {
-            if (m_StartCo != null)
-                StopCoroutine(m_StartCo);
-            if (m_EndCo != null)
-                StopCoroutine(m_EndCo);
-            TurnOffStuff();
         }
     }
 }
