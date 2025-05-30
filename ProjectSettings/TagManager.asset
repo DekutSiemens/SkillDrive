@@ -9,6 +9,9 @@ TagManager:
   - Anchor
   - PlayerHand
   - Destroyer
+  - LeftStopper
+  - RightStopper
+  - PictureCamera
   layers:
   - Default
   - TransparentFX
