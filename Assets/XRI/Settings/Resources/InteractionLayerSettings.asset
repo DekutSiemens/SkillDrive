@@ -14,17 +14,17 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   m_LayerNames:
   - Default
-  - 
-  - 
-  - 
-  - 
-  - 
-  - 
-  - 
-  - 
-  - 
-  - 
-  - 
+  - Hall efect sensor
+  - Capacitive sensor
+  - Inductive sensor
+  - Optical sensor
+  - Ultrasonic sensor
+  - Steel
+  - Aluminium
+  - Magnet
+  - plastic
+  - glass
+  - wood
   - 
   - 
   - 
