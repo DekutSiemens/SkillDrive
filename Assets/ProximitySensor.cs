@@ -1,19 +1,50 @@
 using UnityEngine;
+using UnityEngine.UI;
+using TMPro;
+
+
+public enum SensorType
+{
+    Capacitive,
+    Inductive,
+    Optical,
+    Ultrasonic,
+    HallEffect
+}
+
+public enum DetectionAxis
+{
+    PositiveX,
+    NegativeX,
+    PositiveY,
+    NegativeY,
+    PositiveZ,
+    NegativeZ
+}
 
 public class ProximitySensor : MonoBehaviour
 {
     [Header("Sensor Configuration")]
     public SensorType sensorType = SensorType.Inductive;
-    public float detectionRange = 5f;
+    public DetectionAxis detectionAxis = DetectionAxis.PositiveZ;
+    public float detectionRange = 0.5f; // Default initial value
     public LayerMask detectionLayer = -1;
 
     [Header("Sensor Specific Settings")]
     [Range(0f, 1f)] public float sensitivity = 0.5f;
     public bool debugMode = true;
 
+    [Header("Positioning Control")]
+    public bool enableDetection = false;
+
     [Header("Actuator Connection")]
     public StepperMotor connectedActuator;
     public int stepsOnDetection = 10;
+
+    [Header("UI Controls")]
+    public Slider rangeSlider;             // Assign this in the Inspector
+    public TMP_Text rangeLabel;
+    
 
     // Detection state
     private bool isDetecting = false;
@@ -36,26 +67,49 @@ public class ProximitySensor : MonoBehaviour
 
     void Update()
     {
-        PerformDetection();
-        HandleDetectionChange();
+        // Update detection range from UI slider (0 to 1)
+        if (rangeSlider != null)
+        {
+            detectionRange = rangeSlider.value;
+        }
+
+        if (rangeLabel != null)
+        {
+            rangeLabel.text = $"Range: {detectionRange:F2} m";
+        }
+
+
+        if (enableDetection)
+        {
+            PerformDetection();
+            HandleDetectionChange();
+        }
+        else
+        {
+            isDetecting = false;
+            currentMaterial = null;
+        }
+
         UpdateVisualFeedback();
     }
 
     void PerformDetection()
     {
-        // Cast a sphere to detect objects in range
-        Collider[] objectsInRange = Physics.OverlapSphere(transform.position, detectionRange, detectionLayer);
+        Vector3 detectionDirection = GetDetectionDirection();
+        RaycastHit[] hits = Physics.RaycastAll(transform.position, detectionDirection, detectionRange, detectionLayer);
 
         bool materialDetected = false;
         MaterialProperties closestMaterial = null;
         float closestDistance = float.MaxValue;
 
-        foreach (Collider obj in objectsInRange)
+        foreach (RaycastHit hit in hits)
         {
-            MaterialProperties material = obj.GetComponent<MaterialProperties>();
+            if (hit.transform == transform) continue;
+
+            MaterialProperties material = hit.collider.GetComponent<MaterialProperties>();
             if (material != null)
             {
-                float distance = Vector3.Distance(transform.position, obj.transform.position);
+                float distance = hit.distance;
 
                 if (CanDetectMaterial(material, distance))
                 {
@@ -78,32 +132,56 @@ public class ProximitySensor : MonoBehaviour
         }
     }
 
+    Vector3 GetDetectionDirection()
+    {
+        switch (detectionAxis)
+        {
+            case DetectionAxis.PositiveX: return Vector3.right;
+            case DetectionAxis.NegativeX: return Vector3.left;
+            case DetectionAxis.PositiveY: return Vector3.up;
+            case DetectionAxis.NegativeY: return Vector3.down;
+            case DetectionAxis.PositiveZ: return Vector3.forward;
+            case DetectionAxis.NegativeZ: return Vector3.back;
+            default: return Vector3.forward;
+        }
+    }
+
     bool CanDetectMaterial(MaterialProperties material, float distance)
     {
-        // Distance affects detection strength
+        if (distance > detectionRange) return false;
+
         float distanceFactor = 1f - (distance / detectionRange);
+        float detectionThreshold = sensitivity;
 
         switch (sensorType)
         {
             case SensorType.Inductive:
-                // Detects conductive materials (metals)
-                return (material.conductivity * distanceFactor) > sensitivity;
+                if (material.materialType == MaterialType.Steel)
+                    return (material.conductivity * distanceFactor) > detectionThreshold;
+                else if (material.materialType == MaterialType.Aluminium)
+                    return (material.conductivity * distanceFactor * 0.7f) > detectionThreshold;
+                else if (material.materialType == MaterialType.Magnet)
+                    return (material.conductivity * distanceFactor) > detectionThreshold && material.conductivity > 0.3f;
+                return false;
 
             case SensorType.Capacitive:
-                // Detects materials with different dielectric properties
-                return (material.dielectricConstant * distanceFactor) > sensitivity;
+                float capacitiveStrength = (material.dielectricConstant + 0.3f) * distanceFactor;
+                return capacitiveStrength > detectionThreshold;
 
             case SensorType.Optical:
-                // Detects based on reflectivity and line of sight
-                return (material.reflectivity * distanceFactor) > sensitivity && HasLineOfSight(material.transform);
+                float opticalStrength = material.reflectivity * distanceFactor;
+                return opticalStrength > detectionThreshold && material.reflectivity > 0.15f && HasLineOfSight(material.transform);
 
             case SensorType.Ultrasonic:
-                // Detects solid objects based on sound reflection
-                return (material.reflectivity * distanceFactor) > sensitivity;
+                float ultrasonicStrength = (material.reflectivity + 0.4f) * distanceFactor;
+                return ultrasonicStrength > detectionThreshold;
 
             case SensorType.HallEffect:
-                // Only detects magnetic materials
-                return material.isMagnetic && distanceFactor > sensitivity;
+                if (material.materialType == MaterialType.Steel)
+                    return material.isMagnetic && distanceFactor > detectionThreshold;
+                else if (material.materialType == MaterialType.Magnet)
+                    return distanceFactor > detectionThreshold;
+                return false;
 
             default:
                 return false;
@@ -112,11 +190,14 @@ public class ProximitySensor : MonoBehaviour
 
     bool HasLineOfSight(Transform target)
     {
-        Vector3 direction = (target.position - transform.position).normalized;
-        float distance = Vector3.Distance(transform.position, target.position);
+        Vector3 detectionDirection = GetDetectionDirection();
+        Vector3 directionToTarget = (target.position - transform.position).normalized;
+        float dotProduct = Vector3.Dot(detectionDirection, directionToTarget);
+        if (dotProduct < 0.7f) return false;
 
+        float distance = Vector3.Distance(transform.position, target.position);
         RaycastHit hit;
-        if (Physics.Raycast(transform.position, direction, out hit, distance))
+        if (Physics.Raycast(transform.position, detectionDirection, out hit, distance))
         {
             return hit.transform == target;
         }
@@ -125,7 +206,6 @@ public class ProximitySensor : MonoBehaviour
 
     void HandleDetectionChange()
     {
-        // Trigger actuator when detection state changes from false to true
         if (isDetecting && !previousDetectionState)
         {
             TriggerActuator();
@@ -139,7 +219,6 @@ public class ProximitySensor : MonoBehaviour
         if (connectedActuator != null)
         {
             connectedActuator.StepMotor(stepsOnDetection);
-
             if (debugMode)
             {
                 Debug.Log($"Actuator triggered: {stepsOnDetection} steps");
@@ -155,20 +234,37 @@ public class ProximitySensor : MonoBehaviour
         }
     }
 
-    // Gizmos for visualization in scene view
     void OnDrawGizmos()
     {
-        Gizmos.color = isDetecting ? Color.green : Color.red;
-        Gizmos.DrawWireSphere(transform.position, detectionRange);
+        if (!enableDetection) return;
 
-        if (sensorType == SensorType.Optical && isDetecting && currentMaterial != null)
+        Vector3 detectionDirection = GetDetectionDirection();
+        Vector3 endPoint = transform.position + (detectionDirection * detectionRange);
+
+        Gizmos.color = isDetecting ? Color.green : Color.red;
+        Gizmos.DrawLine(transform.position, endPoint);
+        Gizmos.DrawWireSphere(endPoint, 0.2f);
+
+        if (isDetecting && currentMaterial != null)
         {
             Gizmos.color = Color.yellow;
             Gizmos.DrawLine(transform.position, currentMaterial.transform.position);
         }
     }
 
-    // Public methods for testing
+    // Public methods
+    public void EnableDetection()
+    {
+        enableDetection = true;
+        if (debugMode) Debug.Log($"{sensorType} sensor detection enabled");
+    }
+
+    public void DisableDetection()
+    {
+        enableDetection = false;
+        if (debugMode) Debug.Log($"{sensorType} sensor detection disabled");
+    }
+
     public bool IsDetecting() => isDetecting;
     public MaterialType GetDetectedMaterial() => currentMaterial?.materialType ?? MaterialType.Air;
 }
